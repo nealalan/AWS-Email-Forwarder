@@ -229,24 +229,45 @@ Create an [IAM role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.h
 
 ```bash
 aws iam create-role \
---role-name SESMailForwarder-xyz \
---assume-role-policy-document file://IAM-role.json \
---profile neonaluminum
+  --role-name SESMailForwarder-xyz \
+  --assume-role-policy-document file://IAM-role.json \
+  --profile neonaluminum
 
 ```
 
+![IAM CREATE ROLE OUTPUT SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.48.38.jpg?raw=true)
 
 
-
+16. VERIFY THE ROLE
 
 ```bash
 $ aws iam list-roles \
-  --query 'Roles[].{Name:RoleName,Id:RoleId,Arn:Arn}' \
+  --query 'Role[?starts_with(RoleName, `SES`)=='true'].{Name:RoleName,Id:RoleId,Arn:Arn}' \
   --profile neonaluminum
 ```
 
+17. ATTACH POLICY TO THE ROLE
 
+Use the **Policy ARN** from above and update the newly created **role-name** here.
 
+```bash
+$ aws iam attach-role-policy \
+  --policy-arn arn:aws:iam::020184898418:policy/SES-Write-S3-CloudWatchLogs-xyz \
+  --role-name SESMailForwarder-xyz \
+  --profile neonaluminum
+```
+
+18. VERITY THE POLICY IS ATTACHED TO THE ROLE
+
+```bash
+$ aws iam list-attached-role-policies \
+  --role-name SESMailForwarder-xyz \
+  --profile neonaluminum
+```
+
+![POLICY ATTACHED TO ROLE SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.58.57.jpg?raw=true)
+
+19.
 
 
 
