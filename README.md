@@ -130,9 +130,9 @@ Create a new file called S3-bucket-policy.json. You need to change the bucket na
 
 ```bash
 $ aws s3api put-bucket-policy \
---bucket xyz.neonaluminum.com 
---policy file://S3-bucket-policy.json 
---profile neonaluminum
+  --bucket xyz.neonaluminum.com \
+  --policy file://S3-bucket-policy.json \
+  --profile neonaluminum
 ```
 
 
