@@ -651,14 +651,43 @@ $ aws ses create-receipt-rule \
   --profile neonaluminum
 ```
 
-38. VERIFY THE FULL DETAULT RULE SET
+38. VERIFY THE FULL DEFAULT RULE SET
 
 ```bash
-aws ses describe-active-receipt-rule-set --profile neonaluminum
+aws ses describe-active-receipt-rule-set \
+  --profile neonaluminum
 ```
 
+39. ADD THE FORWARD DESTINATION EMAIL ADDRESS
 
+For each destination email address you added to the Lamba function, you will need to verify in SES this is a valid email address. An email will be sent to each email address. You will need to click the verification link.
 
+```bash
+$ aws ses verify-email-identity \
+  --email-address neonaluminum0@gmail.com \
+  --profile neonaluminum
+```
+
+40. CHECK THE EMAIL ADDRESS VERIFICATION STATUS
+
+```bash
+$ aws ses get-identity-verification-attributes \
+  --identities neonaluminum0@gmail.com \
+  --output table \
+  --profile neonaluminum
+```
+
+Also, you can list all address identities using:
+
+```bash
+aws ses list-identities \
+  --output table \
+  --profile neonaluminum
+```
+
+## COMPLETE? TEST IT OUT
+
+Send an email to any name@your-domain.com and then check your forwarding email address!
 
 
 
