@@ -333,23 +333,329 @@ MAKING THE LAMBDA FUNCTION EXECUTE - We have two ways this can happen.
 
 22. QUERY THE ROUTE 53 HOSTED DONE ARN
 
-```
+Note: Everything I do with Route 53 in my example will use the `--profile update-dns` flag. This is because I have all domains and hosted zones in a separate AWS account.
+
+```bash
 $ aws route53 list-hosted-zoned-by-name \
   --dns-name neonaluminum.com \
   --query 'HostedZones[].{Id:Id,Name:Name,Recs:ResourceRecordSetCount}' \
   --output table \
   --profile update-dns
-  ```
+```
   
 OPTIONAL: If you don't know the Hosted Zone, you can get all:
-  ```bash
-  $ aws route53 list-hosted-zones \
-    --query 'HostedZones[].{Id:Id,Name:Name,Recs:ResourceRecordSetCount}' \
-    --output table \
-    --profile update-dns
-  ```
+
+```bash
+$ aws route53 list-hosted-zones \
+  --query 'HostedZones[].{Id:Id,Name:Name,Recs:ResourceRecordSetCount}' \
+  --output table \
+  --profile update-dns
+```
+
+23. CREATE THE MX DNS RECORD
+
+Create an MX DNS records file called **RT53-MX.json**. Edit the **"ResourceRecordSet" Name**. If you aren’t going to be using the zone us-east-1 then change it to your AZ. 
+
+```json
+{
+   "Comment": "Add an MX record from AWS CLI",
+   "Changes": [{
+       "Action": "CREATE",
+       "ResourceRecordSet": {
+           "Name": "xyz.neonaluminum.com",
+           "Type": "MX",
+           "TTL": 300,
+           "ResourceRecords": [
+           {
+               "Value": "10 inbound-smtp.us-east-1.amazonaws.com"
+           }
+           ]
+       }
+   }]
+}
+```
 
 
+NOTE: This will add a new DNS record to AWS immediately, however the record may take minutes to cascade out to internet DNS servers. 
+
+24. APPLY THE MX DNS RECORD
+
+The `--hosted-zone-id` is populated with the **Id** value from STEP 22.
+
+```json
+$ aws route53 change-resource-record-sets \
+  --hosted-zone-id /hostedzone/Z5SU74LXIR5HC \
+  --change-batch file://RT53-MX.json \
+  --profile update-dns
+```
+
+OUTPUT:
+
+![MX RECORD APPLICATION SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2021.58.11.jpg?raw=true)
+
+25. QUERY THE ROUTE 53 HOSTED ZONE DNS RECORDS
+
+Using the Hosted Zone ID or Amazon Resource Name (ARN) listed, query the DNS records. Here we will look up all existing MX records and list them in a table.
+
+```bash
+$ aws route53 list-resource-record-sets \
+  --hosted-zone-id /hostedzone/Z5SU74LXIR5HC \
+  --query "ResourceRecordSets[?Type == 'MX'].{Name:Name,Type:Type}" \
+  --output table \
+  --profile update-dns
+```
+
+26. VERIFY ACCESS TO THE DOMAIN NAME USING SES
+
+Before we can configure Amazon SES to receive email for your domain, you must prove you own the domain. This command will request for SES to create a VerificationToken that we will add to the Route 53 HostedZone DNS records. 
+
+```
+$ aws ses verify-domain-identity \
+  --domain xyz.neonaluminum.com \
+  --output table \
+  --profile neonaluminum
+```
+
+Output:
+![SES TOKEN SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.09.53.jpg?raw=true)
+
+27. CREATE THE TXT DNS RECORD FOR SES VERIFICATION
+
+Create the new TXT record set in a file called **RT53-TXT-verification.json**. 
+  - Name field: **your domain with _amazonses** before it
+  - ResourceRecords Value: This will be the Verification Token! Be sure to leave `"\\` and `\\"` as a part of the value.
+
+```json
+{
+   "Comment": "Add a TXT record for SES Verification",
+   "Changes": [{
+       "Action": "CREATE",
+       "ResourceRecordSet": {
+           "Name": "_amazonses.xyz.neonaluminum.com",
+           "Type": "TXT",
+           "TTL": 1800,
+           "ResourceRecords": [
+           {
+               "Value": "\"K3M7E5+hD2EVwufopuxhADZtJyQ4fLLjsD0nkHs0tow=\""
+           }
+           ]
+       }
+   }]
+}
+```
+
+28. APPLY THE TXT DNS RECORD
+
+```bash
+$ aws route53 change-resource-record-sets \
+  --hosted-zone-id /hostedzone/Z5SU74LXIR5HC \
+  --change-batch file://RT53-TXT-verification.json \
+  --profile update-dns
+```
+
+Output:
+
+![TXT DNS RECORD SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.16.51.jpg?raw=true)
+
+29. GENERATE SES DKIM VALUES 
+
+The [DomainKeys_Identified_Mail](https://en.wikipedia.org/wiki/DomainKeys_Identified_Mail) CNAME DNS records help detect forged sender addresses. This security measure is increasing help stop spam from forged addresses. (Someone pretending they are *support@apple.com* in an email to you.
+
+```
+$ aws ses verify-domain-dkim --query DkimTokens[] \
+  --output table \
+  --domain xyz.neonaluminum.com \
+  --profile neonaluminum
+```
+
+Output:
+
+![DKIM SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.36.48.jpg?raw=true)
+
+30. CREATE THE CNAME DNS RECORDS USING THE DKIM VALUES
+
+Create the new CNAME record set in a file called **RT53-DKIM.json**. 
+Note: You need to update the **ResourceRecordSet** and **Value** for each of the three DomainKeys.
+
+```json
+{
+    "Comment": "Add a CNAME record for DKIM Verification",
+    "Changes": [ {
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "biper62novmqs5nwyuaqylmoxgknh4mf._domainkey.xyz.neonaluminum.com.",
+            "Type": "CNAME",
+            "TTL": 1800,
+            "ResourceRecords": [
+                {
+                    "Value": "biper62novmqs5nwyuaqylmoxgknh4mf.dkim.amazonses.com"
+                }
+            ]
+        }
+    },{
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "kzjnt47ktaaatuwasqj6ifajr6wrvkzt._domainkey.xyz.neonaluminum.com.",
+            "Type": "CNAME",
+            "TTL": 1800,
+            "ResourceRecords": [
+                {
+                    "Value": "kzjnt47ktaaatuwasqj6ifajr6wrvkzt.dkim.amazonses.com"
+                }
+            ]
+        }
+    },{
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "nzlfpjpox72payms2kbhnunrjeqqu637._domainkey.xyz.neonaluminum.com.",
+            "Type": "CNAME",
+            "TTL": 1800,
+            "ResourceRecords": [
+                {
+                    "Value": "nzlfpjpox72payms2kbhnunrjeqqu637.dkim.amazonses.com"
+                }
+            ]
+        }
+    }
+    ]
+ }
+```
+
+31. APPLY THE CNAME DNS RECORDS
+
+```bash
+$ aws route53 change-resource-record-sets \
+  --hosted-zone-id /hostedzone/Z5SU74LXIR5HC \
+  --change-batch file://RT53-DKIM.json \
+  --profile update-dns
+```
+
+Output: 
+
+![CNAME RECORDS SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.40.54.jpg?raw=true)
+
+32. VERIRY THE CNAME DNS RECORDS AND DKIM VALUES
+
+```bash
+aws route53 list-resource-record-sets \
+  --hosted-zone-id /hostedzone/Z5SU74LXIR5HC \
+  --query "ResourceRecordSets[?Type == 'CNAME'].{Name:Name}" \
+  --output table \
+  --profile update-dns
+```
+
+33. OPTIONAL: VIEW ALL DNS RECORDS AND SAVE TO A TEXT FILE
+
+```bash
+$ aws route53 list-resource-record-sets \
+  --hosted-zone-id /hostedzone/Z5SU74LXIR5HC \
+  --query "ResourceRecordSets[].{Name:Name,Type:Type,ResourceRecords:ResourceRecords[0].Value}" \
+  --output table \
+  --profile update-dns >> ALL-DNS-RECORDS.TXT
+ ```
+You can view the **ALL-DNS-RECORDS.TXT** to review all your DNS records.
+
+34. CREATE, VERIFY & ACTIVATE A BLANK SES RULE SET
+
+You can only have one active rule set at a time. 
+
+This command will error if you already have a rule set, you may only need to add rules to the rule set. These instructions will not branch off in the direction of cloning or staging new rule sets.
+
+```bash
+$ aws ses create-receipt-rule-set \
+  --rule-set-name default-rule-set \
+  --profile neonaluminum
+```
+
+Verify the rule set was created
+
+```bash
+$ aws ses list-receipt-rule-sets \
+  --query 'RuleSets[].{Name:Name}' \
+  --output table  \
+  --profile neonaluminum
+```
+
+Activate the rule set
+
+```
+$ aws ses set-active-receipt-rule-set \
+  --rule-set-name default-rule-set \
+  --profile neonaluminum
+```
+
+Verify the rule set is activated - If the rule set name is not listed, it's not activated.
+
+```bash
+$ aws ses describe-active-receipt-rule-set \
+  --profile neonaluminum
+```
+
+35. GRANT SES PERMISSION TO INVOKE THE NEW FUNCTION
+
+This set is automatic if using the AWS Console to create you rule set. Since we are using the command line, we need to manually give permission.
+
+Note: Initially trying to add rules to the rule set, I was stumped for a number of hours with a message “An error occurred (InvalidLambdaFunction) when calling the CreateReceiptRule operation: Could not invoke Lambda function:” I found the solution in the AWS Developers Guide: [Giving Permissions to Amazon SES for Email Receiving](https://docs.aws.amazon.com/ses/latest/DeveloperGuide/receiving-email-permissions.html)
+
+```bash
+$ aws lambda add-permission \
+  --function-name SESForwarder-xyz \
+  --statement-id GiveSESPermissionToInvokeFunction \
+  --action lambda:InvokeFunction \
+  --principal ses.amazonaws.com \
+  --profile neonaluminum
+```
+
+36. CREATE RULES TO THE SES RULE SET
+
+Create a file called **SES-rule-set.json**.
+
+```json
+{
+   "Name": "xyz.neonaluminum.com-rules",
+   "Enabled": true,
+   "TlsPolicy": "Optional",
+   "Recipients": ["xyz.neonaluminum.com"],
+   "Actions": [
+     {
+       "S3Action": {
+         "BucketName": "xyz.neonaluminum.com",
+         "ObjectKeyPrefix": "email/"
+       }
+   },{
+       "LambdaAction": {
+         "FunctionArn": "arn:aws:lambda:us-east-1:020184898418:function:SESForwarder-xyz",
+         "InvocationType": "Event"
+       }
+     }
+   ],
+   "ScanEnabled": true
+ }
+```
+
+If you need the Lambda function Arn, replace the function name with your own and run the command:
+
+```bash
+$ aws lambda get-function \
+  --function-name SESForwarder-xyz \
+  --query 'Configuration.{Name:FunctionName,Arn:FunctionArn}' \
+  --profile neonaluminum
+```
+
+37. APPLY THE RULES TO THE SES RULE SET
+
+```bash
+$ aws ses create-receipt-rule \
+  --rule-set-name default-rule-set \
+  --rule file://SES-rule-set.json \
+  --profile neonaluminum
+```
+
+38. VERIFY THE FULL DETAULT RULE SET
+
+```bash
+aws ses describe-active-receipt-rule-set --profile neonaluminum
+```
 
 
 
