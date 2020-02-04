@@ -36,7 +36,7 @@ $ aws s3 mb s3://abc.neonaluminum.com \
   --profile neonaluminum
 ```
 
-a.  Verify the bucket is created
+2A.  Verify the bucket is created
 
 
 
