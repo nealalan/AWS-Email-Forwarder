@@ -32,13 +32,20 @@ $ aws configure set region us-east-1 \
 2. CREATE AN S3 BUCKET 
 
 ```bash
-$ aws s3 mb s3://abc.neonaluminum.com \
+$ aws s3 mb s3://xyz.neonaluminum.com \
   --profile neonaluminum
 ```
 
-2A.  Verify the bucket is created
+3.  VERIFY THE BUCKET IS CREATED
+
+```bash
+$ aws s3 ls \
+  --profile neonaluminum
+```
 
 
+
+4. SET THE BUCKET LIFECYCLE
 
 
 
