@@ -4,6 +4,10 @@
 
 Use Route 53, SES, S3 &amp; Lambda to implement an email forwarder via the AWS CLI. (Not via the console.)
 
+My use case is I simply want to forward any email to my domain name to my gmail account. Using the G Suit has a US$4-5/mo cost that I have no reason to incur.
+
+I originally received the motivation to work on this from the [aws-lambda-ses-forwarder](https://github.com/arithmetric/aws-lambda-ses-forwarder) repo, but I found myself wanting a greater understanding of how all the pieces worked and integrated. I particularly wanted to understand the resource access and security.
+
 ## ASSUMPTIONS
 
 - The [Amazon Simple Email Service (SES)](https://aws.amazon.com/ses/pricing/) free tier] allows for 62000 emails month. Inbound Data use is US$.09/1000-256kb chunks (or about 250mb). Outgoing attachments are US$0.12 per GB. (Just don’t send attachments!) 
@@ -240,11 +244,18 @@ aws iam create-role \
 
 16. VERIFY THE ROLE
 
+Using the `--query` flag, we can narrow down the results to only roles starting with *SES* and format the output into a table containing the RoleName and Role Arn. This is much more readable than JSON.
+
 ```bash
 $ aws iam list-roles \
-  --query 'Role[?starts_with(RoleName, `SES`)=='true'].{Name:RoleName,Id:RoleId,Arn:Arn}' \
+  --query 'Roles[?starts_with(RoleName,`SES`) == `true`].{RoleName:RoleName,Arn:Arn}' \
+  --output table \
   --profile neonaluminum
 ```
+
+Your output will only list one, unless you already have roles starting with *SES*.
+
+![ROLE SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2021.23.16.jpg?raw=true)
 
 17. ATTACH POLICY TO THE ROLE
 
@@ -267,7 +278,80 @@ $ aws iam list-attached-role-policies \
 
 ![POLICY ATTACHED TO ROLE SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.58.57.jpg?raw=true)
 
-19.
+19. PULL THE CODE USED IN THE LAMBDA FUNCTION
+
+Pull down the pre-written Javascript function that we will modify add to a new Lambda function.
+
+```bash
+$ curl https://raw.githubusercontent.com/arithmetric/aws-lambda-ses-forwarder/master/index.js > aws-lambda-ses-forwarder.js
+```
+
+20. EDIT THE JAVASCRIPT CODE
+
+Make the following changes:
+
+  - **fromEmail**: noreply@example.com changed to noreply@xyz.neonaluminum.com
+  - **subjectPrefix**: from “” to “FWD: ” (I do this so I know this email was forwarded to me)
+  - **emailBucket**: s3-bucket-name to xyz.neonaluminum.com
+  - **emailKeyPrefix**: "emailsPrefix/" to “email/”
+  - **forwardMapping**: There are a bunch of entries and you only need to change or apply what applies to you. Only email from the registered domain name will be processed by the Lambda function. Therefore, I changed: 
+  	"@example.com": [ "example.john@example.com" ] 
+	  TO
+	  “@xyz.neonaluminum.com”: [ “neonaluminum0@gmail.com” ]
+  - **Save** the JavaScript function
+  - **Archive the function** into a ZIP file 
+  ```
+  $ zip aws-lambda-ses-forwarder.zip aws-lambda-ses-forwarder.js
+  ```
+
+21. CREATE THE LAMBDA FUNCTION ON AWS
+
+Use the following data for the command flags:
+
+  - Function name: The **default region** you used in STEP 1 and what you call the function **SESForwarder-xyz**. 
+  - Runtime environment: We will use nodejs12.x. The [runtime list](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) may change in the future.
+  - Handler: the **JS file name** we archived plus **.handler**. 
+  - **Role Arn**: from STEP 16.
+
+```bash
+$ aws lambda create-function \
+  --function-name arn:aws:lambda:us-east-1:020184898418:function:SESForwarder-xyz \
+  --runtime nodejs12.x \
+  --zip-file fileb://aws-lambda-ses-forwarder.zip \
+  --handler aws-lambda-ses-forwarder.handler \
+  --role arn:aws:iam::020184898418:role/SESMailForwarder-xyz \
+  --profile neonaluminum
+```
+
+You should see **"Successful"** at the bottom of the output.
+
+![LAMBDA FUNCTION CREATION SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2021.34.15.jpg?raw=true)
+
+MAKING THE LAMBDA FUNCTION EXECUTE - We have two ways this can happen. 
+- S3 Events can be setup to execute the Lambda function upon a new object creation or
+- SES can be setup to place the email into an S3 bucket and then call the Lambda function. **We will us this method.**
+
+22. QUERY THE ROUTE 53 HOSTED DONE ARN
+
+```
+$ aws route53 list-hosted-zoned-by-name \
+  --dns-name neonaluminum.com \
+  --query 'HostedZones[].{Id:Id,Name:Name,Recs:ResourceRecordSetCount}' \
+  --output table \
+  --profile update-dns
+  ```
+  
+OPTIONAL: If you don't know the Hosted Zone, you can get all:
+  ```bash
+  $ aws route53 list-hosted-zones \
+    --query 'HostedZones[].{Id:Id,Name:Name,Recs:ResourceRecordSetCount}' \
+    --output table \
+    --profile update-dns
+  ```
+
+
+
+
 
 
 
