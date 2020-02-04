@@ -145,34 +145,28 @@ You will need to update the S3 bucket listed and the account ID in this file.
 
 ```json
 {
-   "Version": "2012-10-17",
-   "Statement": [
-       {
-           "Effect": "Allow",
-           "Action": "ses:SendRawEmail",
-           "Resource": "*"
-       },
-       {
-           "Effect": "Allow",
-           "Action": [
-               "s3:PutObject",
-               "s3:GetObject"
-           ],
-           "Resource": "arn:aws:s3:::xyz.neonaluminum.com/*"
-       },
-       {
-           "Effect": "Allow",
-           "Action": [
-               "logs:CreateLogStream",
-               "logs:CreateLogGroup",
-               "logs:PutLogEvents"
-           ],
-           "Resource": [
-               "arn:aws:logs:us-east-1:020184898418:*",
-               "arn:aws:logs:us-east-1:020184898418:log-group:/aws/lambda/SesForwarder:*"
-           ]
-       }
-   ]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ses:SendEmail",
+                "logs:CreateLogStream",
+		"logs:CreateLogGroup",
+                "ses:SendRawEmail",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject"
+            ],
+            "Resource": "arn:aws:s3:::xyz.neonaluminum.com/*"
+        }
+    ]
 }
 ```
 
@@ -688,6 +682,38 @@ aws ses list-identities \
 ## COMPLETE? TEST IT OUT
 
 Send an email to any name@your-domain.com and then check your forwarding email address!
+
+If it works, you should see an email like the screenshot! 
+
+![Success Forward](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-04%20at%2001.32.21.jpg?raw=true)
+
+The *Reply-To:* field contains the original sender of the email also. If I click *"Reply"*, the message will route correctly, only from my email address.
+
+
+## TROUBLESHOOTING
+
+### Check Lambda CloudWatch Dashboard
+
+Under Lambda: *Your-function*: Monitoring: CloudWatch Metrics: You can tell a number of things right away here.
+	- Was the function called?
+	- Did the function error?
+	
+![](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2023.50.48.jpg?raw=true)
+
+Under Lambda: *Your-function*: Monitoring: CloudWatch Logs Insights: You find more detail from the function console logs.
+
+![](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2023.52.24.jpg?raw=true)
+
+Click the drop downs to get a better idea where the error comes from.
+
+![](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-04%20at%2000.08.12.jpg?raw=true)
+
+### Check IAM Policies
+
+Under IAM: Policies: Filter Policies: Check *Customer Managed*: Click *Policy Name*: Permissions: Edit Policies: If you see warnings... something isn't right! It turned out I some old Actions in the IAM! You can fix the policy JSON if you specifically know the correctly update; or you can use the console. Note: I've noticed you can't always remove bad policy information from the console, so you must remove it from the JSON.
+
+![](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-04%20at%2000.03.10.jpg)
+
 
 
 
