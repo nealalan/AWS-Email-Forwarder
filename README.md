@@ -8,6 +8,8 @@ My use case is I simply want to forward any email to my domain name to my gmail 
 
 I originally received the motivation to work on this from the [aws-lambda-ses-forwarder](https://github.com/arithmetric/aws-lambda-ses-forwarder) repo, but I found myself wanting a greater understanding of how all the pieces worked and integrated. I particularly wanted to understand the resource access and security.
 
+![Diagram]()
+
 ## ASSUMPTIONS
 
 - The [Amazon Simple Email Service (SES)](https://aws.amazon.com/ses/pricing/) free tier] allows for 62000 emails month. Inbound Data use is US$.09/1000-256kb chunks (or about 250mb). Outgoing attachments are US$0.12 per GB. (Just don’t send attachments!) 
@@ -170,7 +172,7 @@ You will need to update the S3 bucket listed and the account ID in this file.
 }
 ```
 
-11. APPLY THE NEW IAM POLICY
+### 11. APPLY THE NEW IAM POLICY
 
 ```bash
 $ aws iam create-policy \
@@ -181,7 +183,7 @@ $ aws iam create-policy \
 
 ![IAM policy screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.07.26.jpg?raw=true)
 
-12. VERIFY THE POLICY
+### 12. VERIFY THE POLICY
 
 ```bash
 $ aws iam list-policies \
@@ -193,7 +195,7 @@ $ aws iam list-policies \
 
 ![IAM POLICY screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.11.56.jpg?raw=true)
 
-13. GET POLICY DETAILS
+### 13. GET POLICY DETAILS
 
 You need the policy **Arn** and **Version** to query the specificy policy. 
 
@@ -206,7 +208,7 @@ $ aws iam get-policy-version \
 
 I'll spare the screenshot. It should resemble the IAM-policy.json file.
 
-14. CREATE AN IAM ROLE
+### 14. CREATE AN IAM ROLE
 
 Create an [IAM role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) file called **IAM-role.json**. This will create a trusted relationship with Lambda to allow use of the policy we created. 
 
@@ -223,7 +225,7 @@ Create an [IAM role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.h
 }
 ```
 
-15. APPLY THE IAM ROLE FILE
+### 15. APPLY THE IAM ROLE FILE
 
 ```bash
 aws iam create-role \
@@ -236,7 +238,7 @@ aws iam create-role \
 ![IAM CREATE ROLE OUTPUT SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.48.38.jpg?raw=true)
 
 
-16. VERIFY THE ROLE
+### 16. VERIFY THE ROLE
 
 Using the `--query` flag, we can narrow down the results to only roles starting with *SES* and format the output into a table containing the RoleName and Role Arn. This is much more readable than JSON.
 
@@ -251,7 +253,7 @@ Your output will only list one, unless you already have roles starting with *SES
 
 ![ROLE SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2021.23.16.jpg?raw=true)
 
-17. ATTACH POLICY TO THE ROLE
+### 17. ATTACH POLICY TO THE ROLE
 
 Use the **Policy ARN** from above and update the newly created **role-name** here.
 
@@ -262,7 +264,7 @@ $ aws iam attach-role-policy \
   --profile neonaluminum
 ```
 
-18. VERITY THE POLICY IS ATTACHED TO THE ROLE
+### 18. VERITY THE POLICY IS ATTACHED TO THE ROLE
 
 ```bash
 $ aws iam list-attached-role-policies \
@@ -272,7 +274,7 @@ $ aws iam list-attached-role-policies \
 
 ![POLICY ATTACHED TO ROLE SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.58.57.jpg?raw=true)
 
-19. PULL THE CODE USED IN THE LAMBDA FUNCTION
+### 19. PULL THE CODE USED IN THE LAMBDA FUNCTION
 
 Pull down the pre-written Javascript function that we will modify add to a new Lambda function.
 
@@ -280,7 +282,7 @@ Pull down the pre-written Javascript function that we will modify add to a new L
 $ curl https://raw.githubusercontent.com/arithmetric/aws-lambda-ses-forwarder/master/index.js > aws-lambda-ses-forwarder.js
 ```
 
-20. EDIT THE JAVASCRIPT CODE
+### 20. EDIT THE JAVASCRIPT CODE
 
 Make the following changes:
 
@@ -298,7 +300,7 @@ Make the following changes:
   $ zip aws-lambda-ses-forwarder.zip aws-lambda-ses-forwarder.js
   ```
 
-21. CREATE THE LAMBDA FUNCTION ON AWS
+### 21. CREATE THE LAMBDA FUNCTION ON AWS
 
 Use the following data for the command flags:
 
@@ -325,7 +327,7 @@ MAKING THE LAMBDA FUNCTION EXECUTE - We have two ways this can happen.
 - S3 Events can be setup to execute the Lambda function upon a new object creation or
 - SES can be setup to place the email into an S3 bucket and then call the Lambda function. **We will us this method.**
 
-22. QUERY THE ROUTE 53 HOSTED DONE ARN
+### 22. QUERY THE ROUTE 53 HOSTED DONE ARN
 
 Note: Everything I do with Route 53 in my example will use the `--profile update-dns` flag. This is because I have all domains and hosted zones in a separate AWS account.
 
@@ -346,7 +348,7 @@ $ aws route53 list-hosted-zones \
   --profile update-dns
 ```
 
-23. CREATE THE MX DNS RECORD
+### 23. CREATE THE MX DNS RECORD
 
 Create an MX DNS records file called **RT53-MX.json**. Edit the **"ResourceRecordSet" Name**. If you aren’t going to be using the zone us-east-1 then change it to your AZ. 
 
@@ -372,7 +374,7 @@ Create an MX DNS records file called **RT53-MX.json**. Edit the **"ResourceRecor
 
 NOTE: This will add a new DNS record to AWS immediately, however the record may take minutes to cascade out to internet DNS servers. 
 
-24. APPLY THE MX DNS RECORD
+### 24. APPLY THE MX DNS RECORD
 
 The `--hosted-zone-id` is populated with the **Id** value from STEP 22.
 
@@ -387,7 +389,7 @@ OUTPUT:
 
 ![MX RECORD APPLICATION SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2021.58.11.jpg?raw=true)
 
-25. QUERY THE ROUTE 53 HOSTED ZONE DNS RECORDS
+### 25. QUERY THE ROUTE 53 HOSTED ZONE DNS RECORDS
 
 Using the Hosted Zone ID or Amazon Resource Name (ARN) listed, query the DNS records. Here we will look up all existing MX records and list them in a table.
 
@@ -399,7 +401,7 @@ $ aws route53 list-resource-record-sets \
   --profile update-dns
 ```
 
-26. VERIFY ACCESS TO THE DOMAIN NAME USING SES
+### 26. VERIFY ACCESS TO THE DOMAIN NAME USING SES
 
 Before we can configure Amazon SES to receive email for your domain, you must prove you own the domain. This command will request for SES to create a VerificationToken that we will add to the Route 53 HostedZone DNS records. 
 
@@ -413,7 +415,7 @@ $ aws ses verify-domain-identity \
 Output:
 ![SES TOKEN SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.09.53.jpg?raw=true)
 
-27. CREATE THE TXT DNS RECORD FOR SES VERIFICATION
+### 27. CREATE THE TXT DNS RECORD FOR SES VERIFICATION
 
 Create the new TXT record set in a file called **RT53-TXT-verification.json**. 
   - Name field: **your domain with _amazonses** before it
@@ -438,7 +440,7 @@ Create the new TXT record set in a file called **RT53-TXT-verification.json**.
 }
 ```
 
-28. APPLY THE TXT DNS RECORD
+### 28. APPLY THE TXT DNS RECORD
 
 ```bash
 $ aws route53 change-resource-record-sets \
@@ -451,7 +453,7 @@ Output:
 
 ![TXT DNS RECORD SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.16.51.jpg?raw=true)
 
-29. GENERATE SES DKIM VALUES 
+### 29. GENERATE SES DKIM VALUES 
 
 The [DomainKeys_Identified_Mail](https://en.wikipedia.org/wiki/DomainKeys_Identified_Mail) CNAME DNS records help detect forged sender addresses. This security measure is increasing help stop spam from forged addresses. (Someone pretending they are *support@apple.com* in an email to you.
 
@@ -466,7 +468,7 @@ Output:
 
 ![DKIM SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.36.48.jpg?raw=true)
 
-30. CREATE THE CNAME DNS RECORDS USING THE DKIM VALUES
+### 30. CREATE THE CNAME DNS RECORDS USING THE DKIM VALUES
 
 Create the new CNAME record set in a file called **RT53-DKIM.json**. 
 Note: You need to update the **ResourceRecordSet** and **Value** for each of the three DomainKeys.
@@ -515,7 +517,7 @@ Note: You need to update the **ResourceRecordSet** and **Value** for each of the
  }
 ```
 
-31. APPLY THE CNAME DNS RECORDS
+### 31. APPLY THE CNAME DNS RECORDS
 
 ```bash
 $ aws route53 change-resource-record-sets \
@@ -528,7 +530,7 @@ Output:
 
 ![CNAME RECORDS SCREENSHOT](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2022.40.54.jpg?raw=true)
 
-32. VERIRY THE CNAME DNS RECORDS AND DKIM VALUES
+### 32. VERIRY THE CNAME DNS RECORDS AND DKIM VALUES
 
 ```bash
 aws route53 list-resource-record-sets \
@@ -538,7 +540,7 @@ aws route53 list-resource-record-sets \
   --profile update-dns
 ```
 
-33. OPTIONAL: VIEW ALL DNS RECORDS AND SAVE TO A TEXT FILE
+### 33. OPTIONAL: VIEW ALL DNS RECORDS AND SAVE TO A TEXT FILE
 
 ```bash
 $ aws route53 list-resource-record-sets \
@@ -549,7 +551,7 @@ $ aws route53 list-resource-record-sets \
  ```
 You can view the **ALL-DNS-RECORDS.TXT** to review all your DNS records.
 
-34. CREATE, VERIFY & ACTIVATE A BLANK SES RULE SET
+### 34. CREATE, VERIFY & ACTIVATE A BLANK SES RULE SET
 
 You can only have one active rule set at a time. 
 
@@ -585,7 +587,7 @@ $ aws ses describe-active-receipt-rule-set \
   --profile neonaluminum
 ```
 
-35. GRANT SES PERMISSION TO INVOKE THE NEW FUNCTION
+### 35. GRANT SES PERMISSION TO INVOKE THE NEW FUNCTION
 
 This set is automatic if using the AWS Console to create you rule set. Since we are using the command line, we need to manually give permission.
 
@@ -600,7 +602,7 @@ $ aws lambda add-permission \
   --profile neonaluminum
 ```
 
-36. CREATE RULES TO THE SES RULE SET
+### 36. CREATE RULES TO THE SES RULE SET
 
 Create a file called **SES-rule-set.json**.
 
@@ -636,7 +638,7 @@ $ aws lambda get-function \
   --profile neonaluminum
 ```
 
-37. APPLY THE RULES TO THE SES RULE SET
+### 37. APPLY THE RULES TO THE SES RULE SET
 
 ```bash
 $ aws ses create-receipt-rule \
@@ -645,14 +647,14 @@ $ aws ses create-receipt-rule \
   --profile neonaluminum
 ```
 
-38. VERIFY THE FULL DEFAULT RULE SET
+### 38. VERIFY THE FULL DEFAULT RULE SET
 
 ```bash
 aws ses describe-active-receipt-rule-set \
   --profile neonaluminum
 ```
 
-39. ADD THE FORWARD DESTINATION EMAIL ADDRESS
+### 39. ADD THE FORWARD DESTINATION EMAIL ADDRESS
 
 For each destination email address you added to the Lamba function, you will need to verify in SES this is a valid email address. An email will be sent to each email address. You will need to click the verification link.
 
@@ -662,7 +664,7 @@ $ aws ses verify-email-identity \
   --profile neonaluminum
 ```
 
-40. CHECK THE EMAIL ADDRESS VERIFICATION STATUS
+### 40. CHECK THE EMAIL ADDRESS VERIFICATION STATUS
 
 ```bash
 $ aws ses get-identity-verification-attributes \
