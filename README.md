@@ -43,11 +43,35 @@ $ aws s3 ls \
   --profile neonaluminum
 ```
 
+![S3 LS Screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2018.07.38.jpg?raw=true)
 
+4. CREATE A BUCKET LIFECYCLE POLICY FILE
 
-4. SET THE BUCKET LIFECYCLE
+```json
+{
+   "Rules": [
+       {
+           "Filter": {
+               "Prefix": "mail/"
+           },
+           "Status": "Enabled",
+           "Expiration": {
+               "Days": 90
+           },
+           "ID": "Expire90"
+       }
+   ]
+}
+```
 
+5. SET THE BUCKET LIFECYCLE
 
+```bash
+$ aws s3api put-bucket-lifecycle-configuration  \
+  --bucket xyz.neonaluminum.com  \
+  --lifecycle-configuration file://S3-lifecycle.json \
+  --profile neonaluminum
+```
 
 
 
