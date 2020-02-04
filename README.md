@@ -26,21 +26,21 @@ Use Route 53, SES, S3 &amp; Lambda to implement an email forwarder via the AWS C
 
 ```bash
 $ aws configure set region us-east-1 \
-  --profile neonaluminum
+--profile neonaluminum
 ```
 
 2. CREATE AN S3 BUCKET 
 
 ```bash
 $ aws s3 mb s3://xyz.neonaluminum.com \
-  --profile neonaluminum
+--profile neonaluminum
 ```
 
 3.  VERIFY THE BUCKET IS CREATED
 
 ```bash
 $ aws s3 ls \
-  --profile neonaluminum
+--profile neonaluminum
 ```
 
 ![S3 LS Screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2018.07.38.jpg?raw=true)
@@ -72,17 +72,17 @@ Using the lifecycle config, you can migrate files to less redundant, less availa
 
 ```bash
 $ aws s3api put-bucket-lifecycle-configuration  \
-  --bucket xyz.neonaluminum.com  \
-  --lifecycle-configuration file://S3-lifecycle.json \
-  --profile neonaluminum
+--bucket xyz.neonaluminum.com  \
+--lifecycle-configuration file://S3-lifecycle.json \
+--profile neonaluminum
 ```
 
 6. VERIFY THE BUCKET LIFECYCLE CONFIGURATION
 
 ```BASH
 $ aws s3api get-bucket-lifecycle-configuration  \
-  --bucket xyz.neonaluminum.com \
-  --profile neonaluminum
+--bucket xyz.neonaluminum.com \
+--profile neonaluminum
 
 ```
 
@@ -94,9 +94,9 @@ A 12-digit account number will be displayed. Save this in your notes for later u
 
 ```bash
 $ aws sts get-caller-identity \
-  --query Account \
-  --output text \
-  --profile neonaluminum
+--query Account \
+--output text \
+--profile neonaluminum
 ```
 
 8. CREATE A BUCKET POLICY FILE
@@ -130,9 +130,9 @@ Create a new file called S3-bucket-policy.json. You need to change the bucket na
 
 ```bash
 $ aws s3api put-bucket-policy \
-  --bucket xyz.neonaluminum.com 
-  --policy file://S3-bucket-policy.json 
-  --profile neonaluminum
+--bucket xyz.neonaluminum.com 
+--policy file://S3-bucket-policy.json 
+--profile neonaluminum
 ```
 
 
