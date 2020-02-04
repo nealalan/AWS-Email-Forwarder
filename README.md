@@ -26,21 +26,21 @@ I originally received the motivation to work on this from the [aws-lambda-ses-fo
 
 ## STEPS FOR IMPLEMENTATION
 
-1. SETUP THE DEFAULT REGION FOR SES
+### 1. SETUP THE DEFAULT REGION FOR SES
 
 ```bash
 $ aws configure set region us-east-1 \
   --profile neonaluminum
 ```
 
-2. CREATE AN S3 BUCKET 
+### 2. CREATE AN S3 BUCKET 
 
 ```bash
 $ aws s3 mb s3://xyz.neonaluminum.com \
   --profile neonaluminum
 ```
 
-3.  VERIFY THE BUCKET IS CREATED
+### 3.  VERIFY THE BUCKET IS CREATED
 
 ```bash
 $ aws s3 ls \
@@ -49,7 +49,7 @@ $ aws s3 ls \
 
 ![S3 LS Screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2018.07.38.jpg?raw=true)
 
-4. CREATE A BUCKET LIFECYCLE POLICY FILE
+### 4. CREATE A BUCKET LIFECYCLE POLICY FILE
 
 Create a new file called **S3-lifecycle.json** to enable a 90 automatic removal for all object in the S3 bucket labeled *mail/*. 
 
@@ -70,7 +70,7 @@ Create a new file called **S3-lifecycle.json** to enable a 90 automatic removal 
 }
 ```
 
-5. APPLY THE BUCKET LIFECYCLE CONFIGURATION
+### 5. APPLY THE BUCKET LIFECYCLE CONFIGURATION
 
 Using the lifecycle config, you can migrate files to less redundant, less available and less costly storage. Since we don't really care about these emails past when they are sent (almost immediately), we will store them for 90 days. If you wanted to view emails that were never forwarded because of an error (invalid or unverified *To:* address), you can see them in S3 prior to deletion.
 
@@ -81,7 +81,7 @@ $ aws s3api put-bucket-lifecycle-configuration  \
   --profile neonaluminum
 ```
 
-6. VERIFY THE BUCKET LIFECYCLE CONFIGURATION
+### 6. VERIFY THE BUCKET LIFECYCLE CONFIGURATION
 
 ```BASH
 $ aws s3api get-bucket-lifecycle-configuration  \
@@ -91,7 +91,7 @@ $ aws s3api get-bucket-lifecycle-configuration  \
 
 ![S3 Bucket Lifecycle Config Screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2018.37.25.jpg?raw=true)
 
-7. QUERY THE ACCOUNT ID
+### 7. QUERY THE ACCOUNT ID
 
 A 12-digit account number will be displayed. Save this in your notes for later use. 
 
@@ -102,7 +102,7 @@ $ aws sts get-caller-identity \
   --profile neonaluminum
 ```
 
-8. CREATE A BUCKET POLICY FILE
+### 8. CREATE A BUCKET POLICY FILE
 
 Create a new file called **S3-bucket-policy.json**. You need to change the bucket name under the **"Resource"** key and change the **"aws:Referer"** number to your ACCOUNT ID.
 
@@ -129,7 +129,7 @@ Create a new file called **S3-bucket-policy.json**. You need to change the bucke
 
 ```
 
-9. APPLY THE BUCKET POLICY
+### 9. APPLY THE BUCKET POLICY
 
 ```bash
 $ aws s3api put-bucket-policy \
@@ -138,7 +138,7 @@ $ aws s3api put-bucket-policy \
   --profile neonaluminum
 ```
 
-10. CREATE A NEW IAM POLICY
+### 10. CREATE A NEW IAM POLICY
 Create an Identity & Access Management Policy file called **IAM-policy.json**. This will specifically give access for SES to write out an S3 object for each piece of mail received and create a CloudWatch Event Log.
 
 You will need to update the S3 bucket listed and the account ID in this file.
