@@ -47,6 +47,8 @@ $ aws s3 ls \
 
 4. CREATE A BUCKET LIFECYCLE POLICY FILE
 
+Create a new file called S3-lifecycle.json to enable a 90 automatic removal for all object in the S3 bucket labeled *mail/*. 
+
 ```json
 {
    "Rules": [
@@ -64,7 +66,9 @@ $ aws s3 ls \
 }
 ```
 
-5. SET THE BUCKET LIFECYCLE
+5. APPLY THE BUCKET LIFECYCLE CONFIGURATION
+
+Using the lifecycle config, you can migrate files to less redundant, less available and less costly storage. Since we don't really care about these emails past when they are sent (almost immediately), we will store them for 90 days. If you wanted to view emails that were never forwarded because of an error (invalid or unverified *To:* address), you can see them in S3 prior to deletion.
 
 ```bash
 $ aws s3api put-bucket-lifecycle-configuration  \
@@ -73,6 +77,63 @@ $ aws s3api put-bucket-lifecycle-configuration  \
   --profile neonaluminum
 ```
 
+6. VERIFY THE BUCKET LIFECYCLE CONFIGURATION
+
+```BASH
+$ aws s3api get-bucket-lifecycle-configuration  \
+  --bucket xyz.neonaluminum.com \
+  --profile neonaluminum
+
+```
+
+![S3 Bucket Lifecycle Config Screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2018.37.25.jpg?raw=true)
+
+7. QUERY THE ACCOUNT ID
+
+A 12-digit account number will be displayed. Save this in your notes for later use. 
+
+```bash
+$ aws sts get-caller-identity \
+  --query Account \
+  --output text \
+  --profile neonaluminum
+```
+
+8. CREATE A BUCKET POLICY FILE
+
+Create a new file called S3-bucket-policy.json. You need to change the bucket name under the **"Resource"** key and change the **Referer** number to your ACCOUNT ID.
+
+```json
+{
+   "Version": "2012-10-17",
+   "Statement": [
+       {
+           "Sid": "AllowSESPuts",
+           "Effect": "Allow",
+           "Principal": {
+               "Service": "ses.amazonaws.com"
+           },
+           "Action": "s3:PutObject",
+           "Resource": "arn:aws:s3:::xyz.neonaluminum.com/*",
+           "Condition": {
+               "StringEquals": {
+                   "aws:Referer": "020184898418"
+               }
+           }
+       }
+   ]
+}
+
+```
+
+9. APPLY THE BUCKET POLICY
+
+```bash
+$ aws s3api put-bucket-policy \
+  --bucket xyz.neonaluminum.com 
+  --policy file://S3-bucket-policy.json 
+  --profile neonaluminum
+```
 
 
 [[edit](https://github.com/nealalan/AWS-Email-Forwarder/edit/master/README.md)]
