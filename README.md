@@ -8,7 +8,7 @@ My use case is I simply want to forward any email to my domain name to my gmail 
 
 I originally received the motivation to work on this from the [aws-lambda-ses-forwarder](https://github.com/arithmetric/aws-lambda-ses-forwarder) repo, but I found myself wanting a greater understanding of how all the pieces worked and integrated. I particularly wanted to understand the resource access and security.
 
-![Diagram]()
+![Diagram](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/AWS-Email-Forwarder.jpg?raw=true)
 
 ## ASSUMPTIONS
 
