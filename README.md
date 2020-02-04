@@ -26,28 +26,28 @@ Use Route 53, SES, S3 &amp; Lambda to implement an email forwarder via the AWS C
 
 ```bash
 $ aws configure set region us-east-1 \
---profile neonaluminum
+  --profile neonaluminum
 ```
 
 2. CREATE AN S3 BUCKET 
 
 ```bash
 $ aws s3 mb s3://xyz.neonaluminum.com \
---profile neonaluminum
+  --profile neonaluminum
 ```
 
 3.  VERIFY THE BUCKET IS CREATED
 
 ```bash
 $ aws s3 ls \
---profile neonaluminum
+  --profile neonaluminum
 ```
 
 ![S3 LS Screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2018.07.38.jpg?raw=true)
 
 4. CREATE A BUCKET LIFECYCLE POLICY FILE
 
-Create a new file called S3-lifecycle.json to enable a 90 automatic removal for all object in the S3 bucket labeled *mail/*. 
+Create a new file called **S3-lifecycle.json** to enable a 90 automatic removal for all object in the S3 bucket labeled *mail/*. 
 
 ```json
 {
@@ -72,18 +72,17 @@ Using the lifecycle config, you can migrate files to less redundant, less availa
 
 ```bash
 $ aws s3api put-bucket-lifecycle-configuration  \
---bucket xyz.neonaluminum.com  \
---lifecycle-configuration file://S3-lifecycle.json \
---profile neonaluminum
+  --bucket xyz.neonaluminum.com  \
+  --lifecycle-configuration file://S3-lifecycle.json \
+  --profile neonaluminum
 ```
 
 6. VERIFY THE BUCKET LIFECYCLE CONFIGURATION
 
 ```BASH
 $ aws s3api get-bucket-lifecycle-configuration  \
---bucket xyz.neonaluminum.com \
---profile neonaluminum
-
+  --bucket xyz.neonaluminum.com \
+  --profile neonaluminum
 ```
 
 ![S3 Bucket Lifecycle Config Screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2018.37.25.jpg?raw=true)
@@ -94,14 +93,14 @@ A 12-digit account number will be displayed. Save this in your notes for later u
 
 ```bash
 $ aws sts get-caller-identity \
---query Account \
---output text \
---profile neonaluminum
+  --query Account \
+  --output text \
+  --profile neonaluminum
 ```
 
 8. CREATE A BUCKET POLICY FILE
 
-Create a new file called S3-bucket-policy.json. You need to change the bucket name under the **"Resource"** key and change the **Referer** number to your ACCOUNT ID.
+Create a new file called **S3-bucket-policy.json**. You need to change the bucket name under the **"Resource"** key and change the **"aws:Referer"** number to your ACCOUNT ID.
 
 ```json
 {
@@ -134,6 +133,122 @@ $ aws s3api put-bucket-policy \
   --policy file://S3-bucket-policy.json \
   --profile neonaluminum
 ```
+
+10. CREATE A NEW IAM POLICY
+Create an Identity & Access Management Policy file called **IAM-policy.json**. This will specifically give access for SES to write out an S3 object for each piece of mail received and create a CloudWatch Event Log.
+
+You will need to update the S3 bucket listed and the account ID in this file.
+
+```json
+{
+   "Version": "2012-10-17",
+   "Statement": [
+       {
+           "Effect": "Allow",
+           "Action": "ses:SendRawEmail",
+           "Resource": "*"
+       },
+       {
+           "Effect": "Allow",
+           "Action": [
+               "s3:PutObject",
+               "s3:GetObject"
+           ],
+           "Resource": "arn:aws:s3:::xyz.neonaluminum.com/*"
+       },
+       {
+           "Effect": "Allow",
+           "Action": [
+               "logs:CreateLogStream",
+               "logs:CreateLogGroup",
+               "logs:PutLogEvents"
+           ],
+           "Resource": [
+               "arn:aws:logs:us-east-1:020184898418:*",
+               "arn:aws:logs:us-east-1:020184898418:log-group:/aws/lambda/SesForwarder:*"
+           ]
+       }
+   ]
+}
+```
+
+11. APPLY THE NEW IAM POLICY
+
+```bash
+$ aws iam create-policy \
+  --policy-name SES-Write-S3-CloudWatchLogs-xyz \
+  --policy-document file://IAM-policy.json \
+  --profile neonaluminum
+```
+
+![IAM policy screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.07.26.jpg?raw=true)
+
+12. VERIFY THE POLICY
+
+```bash
+$ aws iam list-policies \
+  --scope Local \
+  --query 'Policies[].{Name:PolicyName,Version:DefaultVersionId,Arn:Arn}' \
+  --output table \
+  --profile neonaluminum
+```
+
+![IAM POLICY screenshot](https://github.com/nealalan/AWS-Email-Forwarder/blob/master/images/Screen%20Shot%202020-02-03%20at%2019.11.56.jpg?raw=true)
+
+13. GET POLICY DETAILS
+
+You need the policy **Arn** and **Version** to query the specificy policy. 
+
+```bash
+$ aws iam get-policy-version \
+  --policy-arn arn:aws:iam::020184898418:policy/SES-Write-S3-CloudWatchLogs-xyz \
+  --version-id v1 \
+  --profile neonaluminum
+```
+
+I'll spare the screenshot. It should resemble the IAM-policy.json file.
+
+14. CREATE AN IAM ROLE
+
+Create an [IAM role](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html) file called **IAM-role.json**. This will create a trusted relationship with Lambda to allow use of the policy we created. 
+
+```json
+{
+   "Version": "2012-10-17",
+   "Statement": {
+       "Effect": "Allow",
+       "Principal": {
+           "Service": "lambda.amazonaws.com"
+       },
+       "Action": "sts:AssumeRole"
+   }
+}
+```
+
+15. APPLY THE IAM ROLE FILE
+
+```bash
+aws iam create-role \
+--role-name SESMailForwarder-xyz \
+--assume-role-policy-document file://IAM-role.json \
+--profile neonaluminum
+
+```
+
+
+
+
+
+```bash
+$ aws iam list-roles \
+  --query 'Roles[].{Name:RoleName,Id:RoleId,Arn:Arn}' \
+  --profile neonaluminum
+```
+
+
+
+
+
 
 
 [[edit](https://github.com/nealalan/AWS-Email-Forwarder/edit/master/README.md)]
