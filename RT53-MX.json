@@ -1,0 +1,17 @@
+{
+    "Comment": "Add an MX record from AWS CLI",
+    "Changes": [{
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "xyz.neonaluminum.com",
+            "Type": "MX",
+            "TTL": 300,
+            "ResourceRecords": [
+            {
+                "Value": "10 inbound-smtp.us-east-1.amazonaws.com"
+            }
+            ]
+        }
+    }]
+ }
+ 

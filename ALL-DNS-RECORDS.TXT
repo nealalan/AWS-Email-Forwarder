@@ -1,0 +1,33 @@
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|                                                                     ListResourceRecordSets                                                                      |
++--------------------------------------------------------------------+-----------------------------------------------------------------------------------+--------+
+|                                Name                                |                                  ResourceRecords                                  | Type   |
++--------------------------------------------------------------------+-----------------------------------------------------------------------------------+--------+
+|  neonaluminum.com.                                                 |  18.223.13.99                                                                     |  A     |
+|  neonaluminum.com.                                                 |  10 inbound-smtp.us-east-1.amazonaws.com                                          |  MX    |
+|  neonaluminum.com.                                                 |  ns-1663.awsdns-15.co.uk.                                                         |  NS    |
+|  neonaluminum.com.                                                 |  ns-1663.awsdns-15.co.uk. awsdns-hostmaster.amazon.com. 1 7200 900 1209600 86400  |  SOA   |
+|  neonaluminum.com.                                                 |  "keybase-site-verification=2xs6iNxdKUVT6Xya1ZxWCC3-Z5ib2IAU8p4Fk0Q-geM"          |  TXT   |
+|  _acme-challenge.neonaluminum.com.                                 |  "P9mroWazUTVoa7XdWz58zesW4f9hqukbbY9Cm7EuKb0"                                    |  TXT   |
+|  _amazonses.neonaluminum.com.                                      |  "CKoFFcO8LWRyzEBv1Dcxdd0QH2sM8Kv7KFtmHiW75RY="                                   |  TXT   |
+|  b5uxswfsfqhtsc2lg2smxi2m5q5lnvqp._domainkey.neonaluminum.com.     |  b5uxswfsfqhtsc2lg2smxi2m5q5lnvqp.dkim.amazonses.com                              |  CNAME |
+|  gkooq62um673egoafyfwqkv63mly5elz._domainkey.neonaluminum.com.     |  gkooq62um673egoafyfwqkv63mly5elz.dkim.amazonses.com                              |  CNAME |
+|  oc4ouxzp5ibx5na2zqvdyvj3otkztn3f._domainkey.neonaluminum.com.     |  oc4ouxzp5ibx5na2zqvdyvj3otkztn3f.dkim.amazonses.com                              |  CNAME |
+|  abc.neonaluminum.com.                                             |  10 inbound-smtp.us-east-1.amazonaws.com                                          |  MX    |
+|  _amazonses.abc.neonaluminum.com.                                  |  "E3uTVZFFlYmRpfDYgTvfIxcjf9sfb78ImUq9dCGFQN8="                                   |  TXT   |
+|  hbh5kx3jxsw35jmvtslneqotl2ehwclg._domainkey.abc.neonaluminum.com. |  hbh5kx3jxsw35jmvtslneqotl2ehwclg.dkim.amazonses.com                              |  CNAME |
+|  ni5ytwq5agx327hnbakeuchohasbfead._domainkey.abc.neonaluminum.com. |  ni5ytwq5agx327hnbakeuchohasbfead.dkim.amazonses.com                              |  CNAME |
+|  nze7wk2yd47k2g76nuyo64jfa7cfn72g._domainkey.abc.neonaluminum.com. |  nze7wk2yd47k2g76nuyo64jfa7cfn72g.dkim.amazonses.com                              |  CNAME |
+|  fire.neonaluminum.com.                                            |  18.223.13.99                                                                     |  A     |
+|  fire.neonaluminum.com.                                            |  10 inbound-smtp.us-east-1.amazonaws.com                                          |  MX    |
+|  _acme-challenge.fire.neonaluminum.com.                            |  "h6RuOq3h1J305UYlkEaxP6_O3vWtPULz6qU0dceomqQ"                                    |  TXT   |
+|  clear.fire.neonaluminum.com.                                      |  18.223.13.99                                                                     |  A     |
+|  www.ne.al.is.neonaluminum.com.                                    |  18.223.13.99                                                                     |  A     |
+|  ozark.neonaluminum.com.                                           |  18.223.13.99                                                                     |  A     |
+|  www.neonaluminum.com.                                             |  18.223.13.99                                                                     |  A     |
+|  xyz.neonaluminum.com.                                             |  10 inbound-smtp.us-east-1.amazonaws.com                                          |  MX    |
+|  _amazonses.xyz.neonaluminum.com.                                  |  "K3M7E5+hD2EVwufopuxhADZtJyQ4fLLjsD0nkHs0tow="                                   |  TXT   |
+|  biper62novmqs5nwyuaqylmoxgknh4mf._domainkey.xyz.neonaluminum.com. |  biper62novmqs5nwyuaqylmoxgknh4mf.dkim.amazonses.com                              |  CNAME |
+|  kzjnt47ktaaatuwasqj6ifajr6wrvkzt._domainkey.xyz.neonaluminum.com. |  kzjnt47ktaaatuwasqj6ifajr6wrvkzt.dkim.amazonses.com                              |  CNAME |
+|  nzlfpjpox72payms2kbhnunrjeqqu637._domainkey.xyz.neonaluminum.com. |  nzlfpjpox72payms2kbhnunrjeqqu637.dkim.amazonses.com                              |  CNAME |
++--------------------------------------------------------------------+-----------------------------------------------------------------------------------+--------+

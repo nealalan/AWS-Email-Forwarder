@@ -1,0 +1,14 @@
+{
+    "Rules": [
+        {
+            "Filter": {
+                "Prefix": "mail/"
+            },
+            "Status": "Enabled",
+            "Expiration": {
+                "Days": 90
+            },
+            "ID": "Expire90"
+        }
+    ]
+}

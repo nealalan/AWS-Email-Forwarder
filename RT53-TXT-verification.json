@@ -1,0 +1,16 @@
+{
+    "Comment": "Add a TXT record for SES Verification",
+    "Changes": [{
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "_amazonses.xyz.neonaluminum.com",
+            "Type": "TXT",
+            "TTL": 1800,
+            "ResourceRecords": [
+            {
+                "Value": "\"K3M7E5+hD2EVwufopuxhADZtJyQ4fLLjsD0nkHs0tow=\""
+            }
+            ]
+        }
+    }]
+ }

@@ -1,0 +1,41 @@
+{
+    "Comment": "Add a CNAME record for DKIM Verification",
+    "Changes": [ {
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "biper62novmqs5nwyuaqylmoxgknh4mf._domainkey.xyz.neonaluminum.com.",
+            "Type": "CNAME",
+            "TTL": 1800,
+            "ResourceRecords": [
+                {
+                    "Value": "biper62novmqs5nwyuaqylmoxgknh4mf.dkim.amazonses.com"
+                }
+            ]
+        }
+    },{
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "kzjnt47ktaaatuwasqj6ifajr6wrvkzt._domainkey.xyz.neonaluminum.com.",
+            "Type": "CNAME",
+            "TTL": 1800,
+            "ResourceRecords": [
+                {
+                    "Value": "kzjnt47ktaaatuwasqj6ifajr6wrvkzt.dkim.amazonses.com"
+                }
+            ]
+        }
+    },{
+        "Action": "CREATE",
+        "ResourceRecordSet": {
+            "Name": "nzlfpjpox72payms2kbhnunrjeqqu637._domainkey.xyz.neonaluminum.com.",
+            "Type": "CNAME",
+            "TTL": 1800,
+            "ResourceRecords": [
+                {
+                    "Value": "nzlfpjpox72payms2kbhnunrjeqqu637.dkim.amazonses.com"
+                }
+            ]
+        }
+    }
+    ]
+ }

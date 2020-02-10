@@ -1,0 +1,20 @@
+{
+  "Name": "xyz.neonaluminum.com-rules",
+  "Enabled": true,
+  "TlsPolicy": "Optional",
+  "Recipients": ["xyz.neonaluminum.com"],
+  "Actions": [
+    {
+      "S3Action": {
+        "BucketName": "xyz.neonaluminum.com",
+        "ObjectKeyPrefix": "email/"
+      }
+  },{
+      "LambdaAction": {
+        "FunctionArn": "arn:aws:lambda:us-east-1:020184898418:function:SESForwarder-xyz",
+        "InvocationType": "Event"
+      }
+    }
+  ],
+  "ScanEnabled": true
+}
